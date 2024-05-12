@@ -150,9 +150,20 @@ const renderCountry = function (data, classname = '') {
 // };
 
 const getCountryData = function (country) {
+  // country1
   fetch(`https://restcountries.com/v3.1/name/${country}`)
     .then(response => response.json())
-    .then(data => renderCountry(data[0]));
+    .then(data => {
+      renderCountry(data[0]);
+
+      // country2
+      const neighbour = data[0].borders?.[0];
+      if (!neighbour) return;
+
+      return fetch(`https://restcountries.com/v3.1/alpha/${neighbour}`);
+    })
+    .then(response => response.json())
+    .then(data => renderCountry(data[0], 'neighbour'));
 };
 
 getCountryData('portugal');
