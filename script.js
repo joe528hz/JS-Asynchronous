@@ -297,42 +297,98 @@ whereAmI(-33.933, 18.474);
 
 //////////////////////////////////////////////////////////////////////////////
 // Building a Simple Promise
-const lotteryPromise = new Promise(function (resolve, reject) {
-  console.log('Lotter Draw is Happening');
-  setTimeout(() => {
-    if (Math.random() >= 0.5) {
-      resolve('You Won');
-    } else {
-      reject(new Error('Better luck next time'));
-    }
-  }, 2000);
-});
+// const lotteryPromise = new Promise(function (resolve, reject) {
+//   console.log('Lotter Draw is Happening');
+//   setTimeout(() => {
+//     if (Math.random() >= 0.5) {
+//       resolve('You Won');
+//     } else {
+//       reject(new Error('Better luck next time'));
+//     }
+//   }, 2000);
+// });
 
-lotteryPromise.then(res => console.log(res)).catch(err => console.error(err));
+// lotteryPromise.then(res => console.log(res)).catch(err => console.error(err));
 
-//Promisifying setTimeout
-const wait = function (seconds) {
-  return new Promise(function (resolve) {
-    setTimeout((resolve, seconds * 1000));
+// //Promisifying setTimeout
+// const wait = function (seconds) {
+//   return new Promise(function (resolve) {
+//     setTimeout((resolve, seconds * 1000));
+//   });
+// };
+
+// wait(1)
+//   .then(() => {
+//     console.log('I waited 2 seconds');
+//     return wait(1);
+//   })
+//   .then(() => console.log('I waited for 1 second'));
+
+// // setTimeout(() => {
+// //   console.log('1 Second Passed');
+// //   setTimeout(() => {
+// //     console.log('2 Second Passed');
+// //     setTimeout(() => {
+// //       console.log('3 Second Passed');
+// //     }, 1000);
+// //   }, 1000);
+// // }, 1000);
+
+// Promise.resolve('abc').then(x => console.log(x));
+// Promise.reject('abc').catch(err => console.error(err));
+
+//////////////////////////////////////////////////////////////////////////////
+// Promisifying the Geolocation API
+// navigator.geolocation.getCurrentPosition(
+//   position => console.log(position),
+//   err => console.error(err)
+// );
+
+const getPosition = function () {
+  return new Promise(function (resolve, reject) {
+    navigator.geolocation.getCurrentPosition(
+      postition => resolve(postition),
+      err => reject(err)
+    );
   });
 };
 
-wait(1)
-  .then(() => {
-    console.log('I waited 2 seconds');
-    return wait(1);
-  })
-  .then(() => console.log('I waited for 1 second'));
+// getPosition().then(response => console.log(response));
+const whereAmI = function () {
+  getPosition()
+    .then(pos => {
+      console.log(pos);
+      const { latitude: lat, longitude: lng } = pos.coords;
+      return fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+      );
+    })
+    .then(response => {
+      console.log(response);
+      if (!response.ok)
+        throw new Error(`Problem with geocoding${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      console.log(data);
+      console.log(`You are in ${data.city}, ${data.countryName}`);
 
-// setTimeout(() => {
-//   console.log('1 Second Passed');
-//   setTimeout(() => {
-//     console.log('2 Second Passed');
-//     setTimeout(() => {
-//       console.log('3 Second Passed');
-//     }, 1000);
-//   }, 1000);
-// }, 1000);
+      return fetch(`https://restcountries.com/v3.1/name/${data.countryName}`)
+        .then(response => {
+          if (!response.ok)
+            throw new Error(`Country not Found!, ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          console.log(data);
+          renderCountry(data[0]);
+          countriesContainer.style.opacity = 1;
+        });
+    })
+    .catch(err => {
+      console.log(`${err} 💥💥💥`);
+      renderError(`Something went wrong 💥💥 ${err.message}. Try Again!`);
+    });
+};
 
-Promise.resolve('abc').then(x => console.log(x));
-Promise.reject('abc').catch(err => console.error(err));
+btn.addEventListener('click', whereAmI);
