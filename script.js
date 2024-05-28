@@ -466,6 +466,43 @@ GOOD LUCK 😀
 
 //////////////////////////////////////////////////////////////////////////////
 // Consuming Promises with Async/Await
+// const getPosition = function () {
+//   return new Promise(function (resolve, reject) {
+//     navigator.geolocation.getCurrentPosition(resolve, reject);
+//   });
+// };
+
+// const whereAmI = async function () {
+//   // Geolocation
+//   try {
+//     const pos = await getPosition();
+//     const { latitud: lat, longitude: lng } = pos.coords;
+
+//     // Reverse geocoding
+//     const resGeo = await fetch(
+//       `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+//     );
+//     if (!resGeo.ok) throw new Error('Problem getting location data');
+//     const dataGeo = await resGeo.json();
+
+//     // Country Data
+//     const [cname] = dataGeo.countryName.split(' ');
+//     console.log(cname);
+//     const res = await fetch(`https://restcountries.com/v3.1/name/${cname}`);
+//     if (!res.ok) throw new Error('Problem getting country');
+
+//     const data = await res.json();
+//     renderCountry(data[0]);
+//   } catch (err) {
+//     console.error(err);
+//     renderError(`${err.message}`);
+//   }
+// };
+
+// whereAmI();
+
+//////////////////////////////////////////////////////////////////////////////
+// Returning Values from Async Functions
 const getPosition = function () {
   return new Promise(function (resolve, reject) {
     navigator.geolocation.getCurrentPosition(resolve, reject);
@@ -487,19 +524,35 @@ const whereAmI = async function () {
 
     // Country Data
     const [cname] = dataGeo.countryName.split(' ');
-    console.log(cname);
     const res = await fetch(`https://restcountries.com/v3.1/name/${cname}`);
     if (!res.ok) throw new Error('Problem getting country');
-
     const data = await res.json();
     renderCountry(data[0]);
+
+    return `You are in ${dataGeo.city}, ${dataGeo.country}`;
   } catch (err) {
     console.error(err);
     renderError(`${err.message}`);
+
+    // reject promised returned from async function (re-throw error)
+    throw err;
   }
 };
 
-whereAmI();
+console.log('1: Will get location');
+// const city = whereAmI();
+// console.log(city);
+// whereAmI()
+//   .then(city => console.log(`2: ${city}`))
+//   .catch(err => console.error(`2: ${err.message}`))
+//   .finally(() => console.log('3: Finished getting location'));
 
-//////////////////////////////////////////////////////////////////////////////
-// Error handling With try...catch
+(async function () {
+  try {
+    const city = await whereAmI();
+    console.log(`2: ${city}`);
+  } catch (err) {
+    console.error(`2: ${err.message}`);
+  }
+  console.log('3: Finished getting location');
+})();
