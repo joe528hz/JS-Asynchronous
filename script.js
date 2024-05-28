@@ -474,21 +474,32 @@ const getPosition = function () {
 
 const whereAmI = async function () {
   // Geolocation
-  const pos = await getPosition();
-  const { latitud: lat, longitude: lng } = pos.coords;
+  try {
+    const pos = await getPosition();
+    const { latitud: lat, longitude: lng } = pos.coords;
 
-  // Reverse geocoding
-  const resGeo = await fetch(
-    `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
-  );
-  const dataGeo = await resGeo.json();
+    // Reverse geocoding
+    const resGeo = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+    );
+    if (!resGeo.ok) throw new Error('Problem getting location data');
+    const dataGeo = await resGeo.json();
 
-  // Country Data
-  const [cname] = dataGeo.countryName.split(' ');
-  console.log(cname);
-  const res = await fetch(`https://restcountries.com/v3.1/name/${cname}`);
-  const data = await res.json();
-  renderCountry(data[0]);
+    // Country Data
+    const [cname] = dataGeo.countryName.split(' ');
+    console.log(cname);
+    const res = await fetch(`https://restcountries.com/v3.1/name/${cname}`);
+    if (!res.ok) throw new Error('Problem getting country');
+
+    const data = await res.json();
+    renderCountry(data[0]);
+  } catch (err) {
+    console.error(err);
+    renderError(`${err.message}`);
+  }
 };
 
 whereAmI();
+
+//////////////////////////////////////////////////////////////////////////////
+// Error handling With try...catch
